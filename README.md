@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+📘 CaptFood — Smart Nutrition Assistant
 
-## Getting Started
+<p align="center"> <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" /> <img src="https://img.shields.io/badge/React-18-blue?logo=react" /> <img src="https://img.shields.io/badge/TailwindCSS-3.x-38B2AC?logo=tailwind-css" /> <img src="https://img.shields.io/badge/Status-Development-yellow" /> </p>
 
-First, run the development server:
+CaptFood adalah aplikasi berbasis Next.js yang membantu pengguna melakukan:
+🍱 Scan makanan → 📊 Analisis nutrisi → ⚡ Rekomendasi menu AI → 🔥 Tracking nutrisi harian.
 
-```bash
+Dibangun dengan arsitektur modular berbasis App Router.
+
+📂 Struktur Proyek
+src/
+├── app/
+│ ├── layout.jsx # Root layout (global)
+│ ├── page.jsx # Landing homepage
+│ │
+│ ├── (landing)/ # Group untuk halaman publik
+│ │ ├── layout.jsx # Landing layout (Header + Footer)
+│ │ ├── login/
+│ │ │ └── page.jsx # Login page
+│ │ └── register/
+│ │ └── page.jsx # Register page
+│ │
+│ ├── (app)/ # Group halaman setelah login
+│ │ ├── dashboard/
+│ │ ├── progress/
+│ │ ├── recomenai/
+│ │ ├── shop/
+│ │ ├── scan/
+│ │ │ ├── page.jsx
+│ │ │ └── hasil/
+│ │ │ ├── layout.jsx
+│ │ │ └── page.jsx
+│ │ └── ...
+│
+├── components/
+│ ├── layout/
+│ │ ├── Header.jsx
+│ │ ├── LandingHeader.jsx
+│ │ ├── LandingFooter.jsx
+│ │ ├── ProfileDropdown.jsx
+│ │ └── SideDrawer.jsx
+│ ├── scan/
+│ │ ├── ScanCamera.jsx
+│ │ └── ScanLayout.jsx
+│ └── ...
+│
+├── lib/
+│ ├── recomenai/
+│ ├── storage/
+│ └── shop/
+│
+└── styles/
+└── globals.css
+
+🚀 Fitur Utama
+✔️ Food Scanning
+
+Menggunakan kamera langsung dari browser
+
+Foto disimpan via sessionStorage
+
+Menampilkan hasil analisis nutrisi
+
+✔️ AI Menu Recommendation
+
+Rekomendasi makanan berdasarkan makro & meal time
+
+✔️ Dashboard Nutrisi
+
+Tracking protein, karbo, lemak, dan kalori
+
+✔️ User Authentication (static UI)
+
+Login / Register halaman khusus (layout berbeda)
+
+✔️ Responsive UI
+
+Menggunakan Tailwind, mobile-first design.
+
+🛠️ Cara Menjalankan Project
+1️⃣ Clone Repo
+git clone <repo-url>
+cd captfood
+
+2️⃣ Install Dependencies
+npm install
+
+3️⃣ Jalankan Development Server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Akses di:
+👉 http://localhost:3000
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4️⃣ Build untuk Production
+npm run build
+npm start
