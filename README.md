@@ -14,10 +14,9 @@ CaptFood adalah aplikasi berbasis **Next.js** yang membantu pengguna melakukan:
 
 Dibangun dengan arsitektur modular berbasis **Next.js App Router**.
 
----
-
 ## 📂 Struktur Proyek
 
+```
 src/
 ├── app/
 │ ├── layout.jsx # Root layout (global)
@@ -61,11 +60,7 @@ src/
 │
 └── styles/
 └── globals.css
-
-yaml
-Copy code
-
----
+```
 
 ## 🚀 Fitur Utama
 
