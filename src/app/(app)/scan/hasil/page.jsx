@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
+// Komponen
 import NutrisiCard from "@/components/scan/NutrisiCard";
 import Modal from "@/components/scan/Modal";
 
+// Icons
 import {
   faFire,
   faDrumstickBite,
@@ -14,6 +16,11 @@ import {
   faDroplet,
   faRotateRight,
   faCheck,
+  faSun,
+  faCloudSun,
+  faMoon,
+  faCookie,
+   faBowlFood, 
 } from "@fortawesome/free-solid-svg-icons";
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"];
@@ -24,136 +31,140 @@ const MEAL_LABEL = {
   snack: "Snack/Etc",
 };
 
-const SEEDS = [
-  {
-    title: "Nasi Ayam Teriyaki",
-    sub: "Hasil identifikasi AI",
-    desc: "Nasi putih, ayam teriyaki, tumis sayur. Porsi 1 mangkuk kecil.",
-    macro: { p: 24, c: 65, f: 12 },
-  },
-  {
-    title: "Mie Goreng Telur",
-    sub: "Hasil identifikasi AI",
-    desc: "Mi goreng rumahan dengan telur orak-arik. Porsi sedang.",
-    macro: { p: 16, c: 58, f: 18 },
-  },
-  {
-    title: "Sate Ayam + Lontong",
-    sub: "Hasil identifikasi AI",
-    desc: "10 tusuk sate ayam, bumbu kacang, 1 potong lontong.",
-    macro: { p: 28, c: 44, f: 20 },
-  },
-  {
-    title: "Salad Buah Yogurt",
-    sub: "Hasil identifikasi AI",
-    desc: "Buah segar + yogurt rendah lemak. Tekstur ringan & segar.",
-    macro: { p: 10, c: 40, f: 6 },
-  },
-];
-
-const kcal = (p = 0, c = 0, f = 0) => Math.round(4 * p + 4 * c + 9 * f);
-
-const DEFAULT_STATUS = {
-  breakfast: false,
-  lunch: false,
-  dinner: false,
-  snack: false,
-};
-
-// baca status meal hari ini dari localStorage
-function getTodayMealStatus() {
-  if (typeof window === "undefined") return { ...DEFAULT_STATUS };
-
-  try {
-    const raw = localStorage.getItem("captfood:entries");
-    if (!raw) return { ...DEFAULT_STATUS };
-
-    const entries = JSON.parse(raw);
-    const today = new Date();
-
-    const isSameDay = (d1, d2) =>
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate();
-
-    const status = { ...DEFAULT_STATUS };
-
-    for (const e of entries) {
-      if (!e?.meal || !e?.at) continue;
-      const d = new Date(e.at);
-      if (Number.isNaN(d.getTime())) continue;
-      if (!isSameDay(d, today)) continue;
-
-      const key = String(e.meal || "").toLowerCase();
-      if (status.hasOwnProperty(key)) {
-        status[key] = true;
-      }
-    }
-
-    return status;
-  } catch {
-    return { ...DEFAULT_STATUS };
-  }
-}
-
-const nextMeal = (meal) => {
-  const idx = MEAL_ORDER.indexOf(meal);
-  if (idx < 0) return "lunch";
-  return MEAL_ORDER[Math.min(idx + 1, MEAL_ORDER.length - 1)];
-};
-
 export default function ScanResultPage() {
   const [img, setImg] = useState(null);
 
-  // hindari hydration error: default SEEDS[0], lalu random setelah mount
-  const [item, setItem] = useState(SEEDS[0]);
+  // data random dari AI
+  const seeds = [
+    {
+      title: "Nasi Ayam Teriyaki",
+      sub: "Hasil identifikasi AI",
+      desc: "Nasi putih, ayam teriyaki, tumis sayur. Porsi 1 mangkuk kecil.",
+      macro: { p: 24, c: 65, f: 12 },
+    },
+    {
+      title: "Mie Goreng Telur",
+      sub: "Hasil identifikasi AI",
+      desc: "Mi goreng rumahan dengan telur orak-arik. Porsi sedang.",
+      macro: { p: 16, c: 58, f: 18 },
+    },
+    {
+      title: "Sate Ayam + Lontong",
+      sub: "Hasil identifikasi AI",
+      desc: "10 tusuk sate ayam, bumbu kacang, 1 potong lontong.",
+      macro: { p: 28, c: 44, f: 20 },
+    },
+    {
+      title: "Salad Buah Yogurt",
+      sub: "Hasil identifikasi AI",
+      desc: "Buah segar + yogurt rendah lemak. Tekstur ringan & segar.",
+      macro: { p: 10, c: 40, f: 6 },
+    },
+  ];
+
+  const kcal = (p, c, f) => Math.round(4 * p + 4 * c + 9 * f);
+
+  // init stabil untuk SSR
+  const [item, setItem] = useState(seeds[0]);
 
   const [addOpen, setAddOpen] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggestMeal, setSuggestMeal] = useState("Lunch");
 
-  const [takenMealsToday, setTakenMealsToday] = useState(DEFAULT_STATUS);
-  const [availableMeals, setAvailableMeals] = useState(MEAL_ORDER);
+  // meal yang SUDAH terisi hari ini (untuk filter tombol Add to)
+  const [takenMealsToday, setTakenMealsToday] = useState({
+    breakfast: false,
+    lunch: false,
+    dinner: false,
+    snack: false,
+  });
 
-  // meal pilihan dari Quick Access (jika ada)
-  const [preferredMeal, setPreferredMeal] = useState(null);
+  // ❗ meal yang “dipaksa” dari QuickAccess (captfood:lastMeal)
+  const [fixedMeal, setFixedMeal] = useState(null);
 
-  // setelah mount → randomkan menu + ambil foto + preferredMeal
+  const nextMeal = (meal) => {
+    const idx = MEAL_ORDER.indexOf(meal);
+    if (idx < 0) return "lunch";
+    return MEAL_ORDER[Math.min(idx + 1, MEAL_ORDER.length - 1)];
+  };
+
+  // ambil foto dari sessionStorage
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // random item
-    const rand = SEEDS[Math.floor(Math.random() * SEEDS.length)];
-    setItem(rand);
-
-    // foto terakhir
     const d = sessionStorage.getItem("captfood:lastScan");
-    if (d) queueMicrotask(() => setImg(d));
+    if (!d) return;
+    queueMicrotask(() => setImg(d));
+  }, []);
 
-    // status meal hari ini
-    const status = getTodayMealStatus();
-    setTakenMealsToday(status);
-    setAvailableMeals(
-      MEAL_ORDER.filter((m) => m === "snack" || !status[m])
-    );
+  // random pilihan menu hanya di client → hindari hydration error
+  useEffect(() => {
+    const pick = seeds[Math.floor(Math.random() * seeds.length)];
+    setItem({ ...pick });
+  }, []);
 
-    // preferensi meal kalau datang dari Quick Access
-    const src = sessionStorage.getItem("captfood:lastMealSource");
-    if (src === "quick") {
+    // baca lastMeal (kalau datang dari QuickAccess) → ONE SHOT
+  useEffect(() => {
+    try {
       const m = sessionStorage.getItem("captfood:lastMeal");
-      if (m) setPreferredMeal(m.toLowerCase());
+      if (!m) return;
+
+      const key = m.toLowerCase();
+      if (MEAL_ORDER.includes(key)) {
+        setFixedMeal(key);
+      }
+
+      // ❗ sangat penting: hapus setelah dipakai
+      sessionStorage.removeItem("captfood:lastMeal");
+    } catch {
+      // ignore
     }
   }, []);
 
-  // helper untuk sync status & available dan return status terbaru
-  const syncStatus = () => {
-    const status = getTodayMealStatus();
-    setTakenMealsToday(status);
-    setAvailableMeals(
-      MEAL_ORDER.filter((m) => m === "snack" || !status[m])
-    );
-    return status;
+
+  // helper: cek entries hari ini → meal mana saja yang sudah terisi
+  const refreshTakenMeals = () => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const raw = localStorage.getItem("captfood:entries");
+      if (!raw) return;
+
+      const entries = JSON.parse(raw);
+      const today = new Date();
+
+      const isSameDay = (d1, d2) =>
+        d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
+
+      const status = {
+        breakfast: false,
+        lunch: false,
+        dinner: false,
+        snack: false,
+      };
+
+      for (const e of entries) {
+        if (!e?.meal || !e?.at) continue;
+        const d = new Date(e.at);
+        if (Number.isNaN(d.getTime())) continue;
+        if (!isSameDay(d, today)) continue;
+
+        const mealKey = (e.meal || "").toLowerCase();
+        if (status.hasOwnProperty(mealKey)) {
+          status[mealKey] = true;
+        }
+      }
+
+      setTakenMealsToday(status);
+    } catch {
+      // abaikan error
+    }
   };
+
+  // panggil sekali saat halaman dibuka
+  useEffect(() => {
+    refreshTakenMeals();
+  }, []);
 
   const handleRefresh = () => {
     const jitter = (v) =>
@@ -169,24 +180,21 @@ export default function ScanResultPage() {
     }));
   };
 
+  // ✅ kalau fixedMeal ada (dari QuickAccess) → langsung simpan tanpa modal
   const handleDone = () => {
-    const status = syncStatus();
+    refreshTakenMeals();
 
-    // kalau datang dari Quick Access & meal itu masih kosong → auto add
-    if (preferredMeal && !status[preferredMeal]) {
-      chooseMeal(preferredMeal);
+    if (fixedMeal && MEAL_ORDER.includes(fixedMeal)) {
+      chooseMeal(fixedMeal);
     } else {
-      // kalau dari kamera tengah / meal sudah terisi → pakai modal
       setAddOpen(true);
     }
   };
 
   const chooseMeal = (meal) => {
-    const normalized = String(meal || "").toLowerCase();
-
     const entry = {
       at: new Date().toISOString(),
-      meal: normalized,
+      meal,
       title: item.title,
       macro: { ...item.macro },
       kcal: kcal(item.macro.p, item.macro.c, item.macro.f),
@@ -198,40 +206,35 @@ export default function ScanResultPage() {
       const prev = JSON.parse(localStorage.getItem(key) || "[]");
       prev.push(entry);
       localStorage.setItem(key, JSON.stringify(prev));
-    } catch {
-      // ignore
-    }
-
-    // bersihkan flag quick access
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("captfood:lastMeal");
-      sessionStorage.removeItem("captfood:lastMealSource");
-    }
-    setPreferredMeal(null);
-
-    // update status lokal
-    const nextStatus = {
-      ...takenMealsToday,
-      [normalized]: true,
-    };
-    setTakenMealsToday(nextStatus);
-    setAvailableMeals(
-      MEAL_ORDER.filter((m) => m === "snack" || !nextStatus[m])
-    );
+    } catch {}
 
     setAddOpen(false);
 
-    const nm = nextMeal(normalized);
-    setSuggestMeal(MEAL_LABEL[nm]);
+    const next = nextMeal(meal);
+    setSuggestMeal(MEAL_LABEL[next]);
     setSuggestOpen(true);
   };
 
-  const goDashboard = () => {
-    window.location.href = "/dashboard";
+  const goDashboard = () => (window.location.href = "/dashboard");
+  const goReco = () =>
+    (window.location.href = `/recomenai?meal=${suggestMeal.toLowerCase()}`);
+
+  const availableMeals = MEAL_ORDER.filter(
+    (m) => m === "snack" || !takenMealsToday[m]
+  );
+
+  const mealIcon = {
+    breakfast: faSun,
+    lunch: faCloudSun,
+    dinner: faMoon,
+    snack: faCookie,
   };
 
-  const goReco = () => {
-    window.location.href = `/recomenai?meal=${suggestMeal.toLowerCase()}`;
+  const mealAccent = {
+    breakfast: "bg-yellow-50 text-yellow-600",
+    lunch: "bg-blue-50 text-blue-600",
+    dinner: "bg-indigo-50 text-indigo-600",
+    snack: "bg-emerald-50 text-emerald-600",
   };
 
   return (
@@ -313,42 +316,72 @@ export default function ScanResultPage() {
         </div>
       </section>
 
-      {/* MODAL ADD – hanya muncul kalau tidak auto-add */}
+      {/* MODAL ADD TO — hanya muncul kalau fixedMeal TIDAK ada */}
       {addOpen && (
         <Modal onClose={() => setAddOpen(false)} title="Add to?">
-          {availableMeals.map((m) => (
-            <button
-              key={m}
-              className="opt w-full bg-gray-100 border rounded-full py-3 font-semibold mb-2"
-              onClick={() => chooseMeal(m)}
-            >
-              {MEAL_LABEL[m]}
-            </button>
-          ))}
+          <p className="text-xs text-gray-500 mb-3 text-center">
+            Pilih waktu makan yang ingin kamu isi untuk hari ini.
+          </p>
+
+          <div className="space-y-2">
+            {availableMeals.map((m) => (
+              <button
+                key={m}
+                onClick={() => chooseMeal(m)}
+                className={`w-full flex items-center justify-between rounded-xl border bg-white px-3 py-2 text-sm hover:shadow-md transition-shadow ${mealAccent[m]}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/70 shadow-inner">
+                    <FontAwesomeIcon icon={mealIcon[m]} className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-900">
+                      {MEAL_LABEL[m]}
+                    </p>
+                    <p className="text-[10px] text-gray-500">
+                      Catat menu ini sebagai{" "}
+                      {MEAL_LABEL[m].toLowerCase()}.
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[11px] font-medium text-gray-600">
+                  Pilih
+                </span>
+              </button>
+            ))}
+          </div>
 
           {availableMeals.length === 0 && (
-            <p className="text-sm text-gray-500 mt-2 text-center">
-              Semua meal utama hari ini sudah terisi.
+            <p className="text-sm text-gray-500 mt-3 text-center">
+              Semua meal utama hari ini sudah terisi. Kamu bisa menambah
+              makanan lain sebagai snack dari dashboard.
             </p>
           )}
         </Modal>
       )}
 
-      {/* MODAL SUGGEST */}
+           {/* MODAL SUGGEST */}
       {suggestOpen && (
         <Modal onClose={() => setSuggestOpen(false)}>
-          <h4 className="text-lg font-bold text-center mb-3">
-            Ingin mencoba rekomendasi AI untuk {suggestMeal}?
-          </h4>
-          <div className="flex gap-3">
+          <div className="text-center mb-4">
+            <p className="text-sm font-semibold text-gray-800">
+              Ingin mencoba rekomendasi AI untuk
+            </p>
+            <p className="text-lg font-extrabold text-gray-900 mt-1">
+              {suggestMeal} ?
+            </p>
+          </div>
+
+          <div className="flex gap-3 pt-1">
             <button
-              className="flex-1 opt bg-gray-100 border rounded-full py-3 font-semibold"
+              className="opt flex-1 bg-gray-100 border border-gray-200 rounded-full py-3 text-sm font-semibold text-gray-800 hover:bg-gray-200 transition"
               onClick={goDashboard}
             >
               Nanti
             </button>
+
             <button
-              className="flex-1 opt bg-gray-100 border rounded-full py-3 font-semibold"
+              className="opt flex-1 bg-green-500 border border-green-500 rounded-full py-3 text-sm font-semibold text-white shadow hover:bg-green-600 transition"
               onClick={goReco}
             >
               Coba
@@ -356,6 +389,7 @@ export default function ScanResultPage() {
           </div>
         </Modal>
       )}
+
     </main>
   );
 }
