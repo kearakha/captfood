@@ -1,14 +1,14 @@
+// app/(app)/shop/page.jsx
 "use client";
 
 import { useState, useMemo } from "react";
 import ShopHero from "@/components/shop/ShopHero";
-import ShopList from "@/components/shop/ShopList"; // yang sudah ada
+import ShopList from "@/components/shop/ShopList";
 import ShopFilters from "@/components/shop/ShopFilters";
 import NotifyModal from "@/components/shop/NotifyModal";
 import generateDummy from "@/lib/shop/generateDummy";
 
 export default function ShopPage() {
-  // lazy read sessionStorage once — safe because "use client"
   const [heroImg] = useState(() => {
     try {
       return (
@@ -36,21 +36,20 @@ export default function ShopPage() {
     }
   });
 
-  // filter/sort state
-  const [sortKey, setSortKey] = useState("distance"); // 'distance' | 'price' | 'rating'
-  const [sortOrder, setSortOrder] = useState("asc"); // 'asc' | 'desc'
+  const [sortKey, setSortKey] = useState("distance");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   const sorted = useMemo(() => {
     if (!restaurants) return [];
-    // create numeric values we can sort by: distance (m), price (low), rating
+
     const parseDistance = (d) => {
       if (!d) return Infinity;
       const m = String(d).match(/(\d+(\.\d+)?)/);
       return m ? Number(m[0]) : Infinity;
     };
+
     const parsePriceLow = (p) => {
       if (!p) return Infinity;
-      // assume format "9–21 ribu" or "9-21 ribu"
       const m = String(p).match(/(\d+)(?=[^\d]*[-–])/);
       return m ? Number(m[1]) : Number(String(p).match(/(\d+)/)?.[0] ?? Infinity);
     };
@@ -59,6 +58,7 @@ export default function ShopPage() {
     coll.sort((a, b) => {
       let av = 0;
       let bv = 0;
+
       if (sortKey === "distance") {
         av = parseDistance(a.dist);
         bv = parseDistance(b.dist);
@@ -69,35 +69,58 @@ export default function ShopPage() {
         av = a.rating ?? 0;
         bv = b.rating ?? 0;
       }
+
       if (av === bv) return 0;
       return sortOrder === "asc" ? av - bv : bv - av;
     });
+
     return coll;
   }, [restaurants, sortKey, sortOrder]);
 
-  // notify modal open state
   const [notifyOpen, setNotifyOpen] = useState(false);
 
   return (
-    <div className="px-4 py-6 max-w-[1000px] mx-auto">
-      <ShopHero
-        img={heroImg}
-        onNotify={() => setNotifyOpen(true)}
-        onBack={() => history.back()}
-      />
+    <main className="min-h-screen bg-gray-50">
+      <div className="px-4 py-6 max-w-[1000px] mx-auto">
+        {/* HERO */}
+        <section className="mb-4">
+          <ShopHero
+            img={heroImg}
+            title={title}
+            onNotify={() => setNotifyOpen(true)}
+            onBack={() => history.back()}
+          />
+        </section>
 
-      <ShopFilters
-        sortKey={sortKey}
-        setSortKey={setSortKey}
-        sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
-      />
+        {/* FILTER CARD */}
+        <section className="mb-4">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3">
+            <ShopFilters
+              sortKey={sortKey}
+              setSortKey={setSortKey}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+            />
+          </div>
+        </section>
 
-      <div className="mt-4">
-        <ShopList items={sorted} />
+        {/* LIST RESTO */}
+        <section>
+          <h3 className="text-lg font-semibold mb-2">
+            Rekomendasi Restoran Dekatmu
+          </h3>
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">
+            <ShopList items={sorted} />
+          </div>
+        </section>
       </div>
 
-      <NotifyModal open={notifyOpen} onClose={() => setNotifyOpen(false)} img={heroImg} title={title} />
-    </div>
+      <NotifyModal
+        open={notifyOpen}
+        onClose={() => setNotifyOpen(false)}
+        img={heroImg}
+        title={title}
+      />
+    </main>
   );
 }

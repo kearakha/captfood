@@ -2,44 +2,52 @@
 "use client";
 
 import Image from "next/image";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBell } from "@fortawesome/free-solid-svg-icons"; // atau free-regular-svg-icons jika prefer outline
+import { ArrowLeftIcon, BellIcon } from "@heroicons/react/24/outline";
 
-const FALLBACK_IMG =
-  "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=1200&q=80";
-
-export default function ShopHero({ img, onBack, onNotify }) {
-  const heroImg = img ?? FALLBACK_IMG;
-
+export default function ShopHero({ img, title = "Menu pilihanmu", onBack, onNotify }) {
   return (
-    <div className="relative mb-4">
-      <div className="relative w-full h-48 rounded-xl overflow-hidden">
+    <div className="relative rounded-3xl overflow-hidden shadow-sm border border-gray-200">
+      {/* Gambar besar */}
+      <div className="relative w-full h-56 sm:h-64">
         <Image
-          src={heroImg}
-          alt="Shop Hero"
+          src={img}
+          alt={title}
           fill
-          sizes="(min-width:1024px) 1000px, 100vw"
+          sizes="(min-width: 768px) 900px, 100vw"
           className="object-cover"
-          priority
         />
+        {/* gradient biar teks kebaca */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/0" />
       </div>
 
-      <button
-        onClick={onBack}
-        className="absolute top-3 left-3 w-10 h-10 rounded-full bg-white shadow flex items-center justify-center"
-        aria-label="Back"
-      >
-        ←
-      </button>
+      {/* tombol back & bell */}
+      <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/90 shadow-sm border border-gray-200"
+        >
+          <ArrowLeftIcon className="w-4 h-4 text-gray-700" />
+        </button>
 
-      <button
-        onClick={onNotify}
-        className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white shadow flex items-center justify-center"
-        aria-label="Notify"
-        title="Notify"
-      >
-        <FontAwesomeIcon icon={faBell} className="text-gray-700" />
-      </button>
+        <button
+          type="button"
+          onClick={onNotify}
+          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/90 shadow-sm border border-gray-200"
+        >
+          <BellIcon className="w-4 h-4 text-gray-700" />
+        </button>
+      </div>
+
+      {/* nama makanan pojok kiri */}
+      <div className="absolute bottom-4 left-4">
+        <p className="text-[11px] text-white/80 mb-0.5">
+          Menu yang kamu cari
+        </p>
+        <h2 className="text-xl sm:text-2xl font-semibold text-white drop-shadow">
+          {title}
+        </h2>
+      </div>
     </div>
   );
 }

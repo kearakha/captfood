@@ -1,94 +1,141 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function NotifyModal({ open, onClose, img, title }) {
-  const [hh, setHh] = useState(18);
-  const [mm, setMm] = useState(30);
+  const [hour, setHour] = useState(18);
+  const [minute, setMinute] = useState(30);
+
+  // load dari localStorage kalau pernah disimpan
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === "undefined") return;
+
+    try {
+      const raw = localStorage.getItem("captfood:notifyTime");
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (typeof data.hour === "number") setHour(data.hour);
+      if (typeof data.minute === "number") setMinute(data.minute);
+    } catch {
+      // ignore
+    }
+  }, [open]);
+
+  const clamp = (val, min, max) => Math.min(max, Math.max(min, val));
+
+  const handleChangeHour = (val) => {
+    const n = Number(val.replace(/\D/g, ""));
+    if (Number.isNaN(n)) return;
+    setHour(clamp(n, 0, 23));
+  };
+
+  const handleChangeMinute = (val) => {
+    const n = Number(val.replace(/\D/g, ""));
+    if (Number.isNaN(n)) return;
+    setMinute(clamp(n, 0, 59));
+  };
+
+  const handleSave = () => {
+    try {
+      const payload = { hour, minute, title: title || "" };
+      localStorage.setItem("captfood:notifyTime", JSON.stringify(payload));
+    } catch {
+      // ignore
+    }
+    onClose?.();
+  };
 
   if (!open) return null;
 
-  function save() {
-    try {
-      const note = {
-        at: `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`,
-        hero: img || null,
-        title: title || null,
-        createdAt: Date.now(),
-      };
-
-      const key = "captfood:notify";
-      const prev = JSON.parse(localStorage.getItem(key) || "[]");
-      prev.push(note);
-      localStorage.setItem(key, JSON.stringify(prev));
-      onClose?.();
-      // Friendly UX: use custom toast in your app if available
-      alert(`Pengingat disimpan: ${note.at}`);
-    } catch (err) {
-      console.error("save notify failed", err);
-      alert("Gagal menyimpan pengingat");
-    }
-  }
-
   return (
-    <div
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      onClick={(e) => e.target === e.currentTarget && onClose?.()}
-    >
-      {/* modal panel with background preview */}
-      <div className="relative w-[520px] max-w-[90%] rounded-xl overflow-hidden">
-        {/* background preview image (blurred & darkened) */}
-        {img && (
-          <div
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: `url(${img})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              filter: "blur(6px) brightness(0.6)",
-              transform: "scale(1.05)",
-            }}
-          />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-2">
+          <h3 className="text-base font-semibold text-gray-900">Notify Me</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-full hover:bg-gray-100"
+          >
+            <XMarkIcon className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Info resto kecil */}
+        {(img || title) && (
+          <div className="flex items-center gap-3 px-5 pb-3">
+            {img && (
+              <div className="w-10 h-10 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0">
+                <Image
+                  src={img}
+                  alt={title || "Restaurant"}
+                  width={80}
+                  height={80}
+                  className="object-cover w-full h-full"
+                />
+              </div>
+            )}
+            <div>
+              <p className="text-xs text-gray-500">Untuk menu</p>
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {title || "Restoran pilihanmu"}
+              </p>
+            </div>
+          </div>
         )}
 
-        {/* content */}
-        <div className="relative bg-white rounded-xl p-6 shadow-xl z-10">
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-            aria-label="Close"
-          >
-            ✕
-          </button>
+        {/* Time picker */}
+        <div className="px-5 pt-2 pb-5 border-t border-gray-100">
+          <p className="text-xs text-gray-500 mb-2">
+            Atur jam pengingat pesananmu
+          </p>
 
-          <h3 className="text-center text-xl font-bold mb-4">Notify Me</h3>
+          <div className="flex items-center justify-center gap-3 mb-6">
+            {/* Hour pill */}
+            <div className="w-20 h-12 rounded-full border border-gray-300 bg-gray-50 flex items-center justify-center">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
+                value={hour.toString().padStart(2, "0")}
+                onChange={(e) => handleChangeHour(e.target.value)}
+                className="w-full text-center bg-transparent outline-none text-base font-semibold text-gray-900"
+              />
+            </div>
 
-          <div className="flex justify-center gap-3 mb-4">
-            <input
-              type="number"
-              value={hh}
-              min={0}
-              max={23}
-              className="w-20 p-3 border rounded-full text-center font-bold"
-              onChange={(e) => setHh(Math.max(0, Math.min(23, Number(e.target.value || 0))))}
-            />
-            <span className="font-bold text-xl self-center">:</span>
-            <input
-              type="number"
-              value={mm}
-              min={0}
-              max={59}
-              className="w-20 p-3 border rounded-full text-center font-bold"
-              onChange={(e) => setMm(Math.max(0, Math.min(59, Number(e.target.value || 0))))}
-            />
+            <span className="text-lg font-semibold text-gray-700">:</span>
+
+            {/* Minute pill */}
+            <div className="w-20 h-12 rounded-full border border-gray-300 bg-gray-50 flex items-center justify-center">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
+                value={minute.toString().padStart(2, "0")}
+                onChange={(e) => handleChangeMinute(e.target.value)}
+                className="w-full text-center bg-transparent outline-none text-base font-semibold text-gray-900"
+              />
+            </div>
           </div>
 
-          <div className="flex gap-3 mt-4">
-            <button onClick={onClose} className="flex-1 bg-gray-100 py-3 rounded-full font-medium">
+          {/* Buttons */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 h-11 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200"
+            >
               Batal
             </button>
-            <button onClick={save} className="flex-1 bg-green-500 text-white py-3 rounded-full font-semibold">
+            <button
+              type="button"
+              onClick={handleSave}
+              className="flex-1 h-11 rounded-full bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 shadow-sm"
+            >
               Simpan
             </button>
           </div>

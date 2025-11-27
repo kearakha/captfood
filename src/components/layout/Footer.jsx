@@ -1,48 +1,37 @@
-'use client'
+"use client";
 
 import Link from "next/link";
 import {
   HomeModernIcon,
   ChartBarIcon,
-  ShoppingCartIcon,
-  SparklesIcon,
-  CameraIcon
+  CameraIcon,
 } from "@heroicons/react/24/outline";
 
 export default function Footer() {
   return (
     <footer className="fixed bottom-0 left-0 w-full bg-white shadow-inner z-50 flex justify-center">
       <div className="w-full max-w-[1000px] px-6 relative">
-
         <div className="flex justify-between items-center py-3">
-
           {/* HOME → /dashboard */}
-          <Link href="/dashboard" className="flex flex-col items-center text-gray-700 cursor-pointer">
+          <Link
+            href="/dashboard"
+            className="flex flex-col items-center text-gray-700 cursor-pointer"
+          >
             <HomeModernIcon className="w-6 h-6" />
             <span className="text-xs mt-0.5">Dashboard</span>
           </Link>
 
+          {/* spacer di tengah, ini yang ketiban kamera */}
+          <div className="w-16" />
+
           {/* PROGRESS → /progress */}
-          <Link href="/progress" className="flex flex-col items-center text-gray-700 cursor-pointer">
+          <Link
+            href="/progress"
+            className="flex flex-col items-center text-gray-700 cursor-pointer"
+          >
             <ChartBarIcon className="w-6 h-6" />
             <span className="text-xs mt-0.5">Progress</span>
           </Link>
-
-          {/* Empty spacer for scan */}
-          <div className="w-16"></div>
-
-          {/* SHOP → /shop */}
-          <Link href="/shop" className="flex flex-col items-center text-gray-700 cursor-pointer">
-            <ShoppingCartIcon className="w-6 h-6" />
-            <span className="text-xs mt-0.5">Shop</span>
-          </Link>
-
-          {/* AI MENU → /recomenai */}
-          <Link href="/recomenai" className="flex flex-col items-center text-gray-700 cursor-pointer">
-            <SparklesIcon className="w-6 h-6" />
-            <span className="text-xs mt-0.5">AI Menu</span>
-          </Link>
-
         </div>
 
         {/* SCAN (floating) → /scan */}
@@ -56,7 +45,6 @@ export default function Footer() {
         >
           <CameraIcon className="w-7 h-7" />
         </Link>
-
       </div>
     </footer>
   );

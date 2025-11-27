@@ -1,37 +1,58 @@
 // src/components/shop/ShopFilters.jsx
 "use client";
 
-import React from "react";
+const SORT_LABEL = {
+  distance: "Jarak",
+  price: "Harga",
+  rating: "Rating",
+};
 
-export default function ShopFilters({ sortKey, setSortKey, sortOrder, setSortOrder }) {
+export default function ShopFilters({
+  sortKey,
+  setSortKey,
+  sortOrder,
+  setSortOrder,
+}) {
+  const handleKeyChange = (key) => {
+    setSortKey(key);
+  };
+
+  const toggleOrder = () => {
+    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+  };
+
   return (
-    <div className="flex flex-col sm:flex-row gap-4 mb-4 items-center">
-      {/* left: sort key */}
-      <div className="flex-1 w-full">
-        <label className="sr-only">Sort by</label>
-        <select
-          value={sortKey}
-          onChange={(e) => setSortKey(e.target.value)}
-          className="w-full border rounded-full py-3 px-4 bg-white shadow-sm appearance-none"
-        >
-          <option value="distance">Jarak Resto</option>
-          <option value="price">Termurah</option>
-          <option value="rating">Rating</option>
-        </select>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* segmented control: Jarak / Harga / Rating */}
+      <div className="inline-flex rounded-full bg-gray-100 p-1">
+        {["distance", "price", "rating"].map((key) => {
+          const active = sortKey === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => handleKeyChange(key)}
+              className={`px-4 py-1.5 text-xs sm:text-sm rounded-full font-medium transition-all
+                ${
+                  active
+                    ? "bg-white shadow-sm text-gray-900"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+            >
+              {SORT_LABEL[key]}
+            </button>
+          );
+        })}
       </div>
 
-      {/* right: order - sama lebar: flex-1; batasi lebar maksimal agar tidak terlalu lebar */}
-      <div className="flex-1 w-full max-w-xs">
-        <label className="sr-only">Order</label>
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-          className="w-full border rounded-full py-3 px-4 bg-white shadow-sm appearance-none"
-        >
-          <option value="asc">Terendah → Tertinggi</option>
-          <option value="desc">Tertinggi → Terendah</option>
-        </select>
-      </div>
+      {/* tombol urutan */}
+      <button
+        type="button"
+        onClick={toggleOrder}
+        className="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm rounded-full border border-gray-300 bg-white font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-1"
+      >
+        {sortOrder === "asc" ? "Terendah → Tertinggi" : "Tertinggi → Terendah"}
+      </button>
     </div>
   );
 }

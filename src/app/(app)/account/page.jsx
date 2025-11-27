@@ -38,7 +38,9 @@ export default function AccountSettingsPage() {
       <div className="space-y-4">
         {/* Name */}
         <div>
-          <label className="text-sm font-semibold text-gray-700">Full Name</label>
+          <label className="text-sm font-semibold text-gray-700">
+            Full Name
+          </label>
           <div className="flex items-center gap-2 mt-1 p-3 bg-white border rounded-lg shadow-sm">
             <UserIcon className="w-5 h-5 text-gray-500" />
             <input
@@ -65,7 +67,9 @@ export default function AccountSettingsPage() {
 
         {/* Password */}
         <div>
-          <label className="text-sm font-semibold text-gray-700">Password</label>
+          <label className="text-sm font-semibold text-gray-700">
+            Password
+          </label>
           <Link
             href="/reset-password"
             className="flex items-center gap-2 mt-1 p-3 bg-white border rounded-lg shadow-sm cursor-pointer hover:bg-gray-50"

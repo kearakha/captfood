@@ -22,7 +22,7 @@ export default function Header() {
   useEffect(() => {
     queueMicrotask(() => {
       setOpenProfile(false);
-      setOpenDrawer(false);
+     
     });
   }, [pathname]);  
 
@@ -31,13 +31,6 @@ export default function Header() {
       <header className="w-full bg-white shadow-sm py-3 px-4 sticky top-0 z-50 flex justify-center">
         <div className="w-full max-w-[1000px] flex items-center justify-between">
 
-          {/* Hamburger */}
-          <button
-            className="text-gray-700"
-            onClick={() => setOpenDrawer(true)}
-          >
-            <Bars3Icon className="w-6 h-6" />
-          </button>
 
           {/* Title */}
           <h1 className="text-lg font-semibold text-gray-900">
