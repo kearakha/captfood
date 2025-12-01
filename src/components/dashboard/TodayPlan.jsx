@@ -30,43 +30,52 @@ export default function TodayPlan() {
   const [target, setTarget] = useState(2500);
   const [loggedKcal, setLoggedKcal] = useState(0);
 
-  useEffect(() => {
+   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // 1) target dari profile
-    const prof = loadProfile();
-    if (prof?.targetCalories) {
-      setTarget(prof.targetCalories);
-    } else if (prof?.weightKg) {
-      setTarget(calcTargetCalories(prof.weightKg, prof.goal));
+    function reloadData() {
+      // --- 1) load profile ---
+      const prof = loadProfile();
+      if (prof?.targetCalories) {
+        setTarget(prof.targetCalories);
+      } else if (prof?.weightKg) {
+        setTarget(calcTargetCalories(prof.weightKg, prof.goal));
+      }
+
+      // --- 2) load entries today ---
+      try {
+        const raw = localStorage.getItem("captfood:entries");
+        if (!raw) return;
+
+        const entries = JSON.parse(raw);
+        const today = new Date();
+
+        const isSameDay = (d1, d2) =>
+          d1.getFullYear() === d2.getFullYear() &&
+          d1.getMonth() === d2.getMonth() &&
+          d1.getDate() === d2.getDate();
+
+        const total = entries.reduce((sum, e) => {
+          if (!e?.at) return sum;
+          const d = new Date(e.at);
+          if (Number.isNaN(d.getTime())) return sum;
+          if (!isSameDay(d, today)) return sum;
+          return sum + Number(e.kcal ?? 0);
+        }, 0);
+
+        setLoggedKcal(total);
+      } catch {}
     }
 
-    // 2) total kalori yang sudah dimakan hari ini dari captfood:entries
-    try {
-      const raw = localStorage.getItem("captfood:entries");
-      if (!raw) return;
+    // Load pertama kali
+    reloadData();
 
-      const entries = JSON.parse(raw);
-      const today = new Date();
+    // 🔥 Listen event profile updated
+    window.addEventListener("profile_updated", reloadData);
 
-      const isSameDay = (d1, d2) =>
-        d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate();
-
-      const total = entries.reduce((sum, e) => {
-        if (!e?.at) return sum;
-        const d = new Date(e.at);
-        if (Number.isNaN(d.getTime())) return sum;
-        if (!isSameDay(d, today)) return sum;
-        const kcal = Number(e.kcal ?? 0);
-        return sum + kcal;
-      }, 0);
-
-      setLoggedKcal(total);
-    } catch {
-      // ignore
-    }
+    return () => {
+      window.removeEventListener("profile_updated", reloadData);
+    };
   }, []);
 
   const left = Math.max(0, Math.round(target - loggedKcal));

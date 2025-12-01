@@ -65,6 +65,7 @@ export default function NutritionPlanPage() {
     };
 
     saveProfile(profile);
+    window.dispatchEvent(new Event("profile-updated"));
     setTargetCalories(tgt);
     alert("Nutrition plan updated!");
 
