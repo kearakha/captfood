@@ -1,25 +1,8 @@
 // src/components/progress/CalorieTrendChart.jsx
 "use client";
-
+import "@/lib/chartConfig"; 
 import { Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend
-);
 
 export default function CalorieTrendChart({ weekly, monthly, mode = "weekly", onChangeMode }) {
   // Normalize inputs: accept either { labels, values } or raw arrays

@@ -1,56 +1,45 @@
-'use client'
+// src/components/progress/DailyNutrientChart.jsx
+"use client";
 
-import { useEffect, useRef } from "react";
-import {
-  Chart,
-  ArcElement,
-  Tooltip,
-  Legend
-} from "chart.js";
+import "@/lib/chartConfig";          // ⬅️ register Chart.js global
+import { Doughnut } from "react-chartjs-2";
 
-Chart.register(ArcElement, Tooltip, Legend);
+export default function DailyNutrientChart({
+  calorie,
+  protein,
+  carbs,
+  fat,
+}) {
+  // jaga-jaga kalau undefined / string
+  const p = Number(protein) || 0;
+  const c = Number(carbs) || 0;
+  const f = Number(fat) || 0;
 
-export default function DailyNutrientChart({ calorie, protein, carbs, fat }) {
-  const canvasRef = useRef(null);
-  const chartRef = useRef(null);
-
-  useEffect(() => {
-    const ctx = canvasRef.current;
-
-    // Destroy chart if already exists
-    if (chartRef.current) chartRef.current.destroy();
-
-    chartRef.current = new Chart(ctx, {
-      type: "doughnut",
-      data: {
-        labels: ["Protein", "Karbo", "Lemak"],
-        datasets: [
-          {
-            data: [protein, carbs, fat],
-            backgroundColor: ["#34c759", "#ff9500", "#5856d6"],
-            hoverOffset: 4,
-          },
-        ],
+  const data = {
+    labels: ["Protein", "Karbohidrat", "Lemak"],
+    datasets: [
+      {
+        data: [p, c, f],
+        backgroundColor: ["#34c759", "#ff9500", "#5856d6"],
+        hoverOffset: 4,
       },
-      options: {
-        plugins: {
-          legend: {
-            position: "bottom",
-            labels: { boxWidth: 10, padding: 10 },
-          },
-        },
-        cutout: "60%",
-        responsive: true,
-        maintainAspectRatio: false,
-      },
-    });
+    ],
+  };
 
-    return () => chartRef.current?.destroy();
-  }, [protein, carbs, fat]);
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "bottom",
+        labels: { boxWidth: 12 },
+      },
+    },
+  };
 
   return (
-    <div className="w-[140px] h-[140px]">
-      <canvas ref={canvasRef}></canvas>
+    <div className="w-40 h-40">
+      <Doughnut data={data} options={options} />
     </div>
   );
 }

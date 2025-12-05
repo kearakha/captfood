@@ -1,15 +1,8 @@
-'use client'
+"use client";
 
+import "@/lib/chartConfig";              // ✅ pakai registrasi global
 import { useState } from "react";
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend
-} from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-
-ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function DailySummaryCard({ getDailyLog }) {
   const [date, setDate] = useState(new Date());
@@ -24,7 +17,14 @@ export default function DailySummaryCard({ getDailyLog }) {
     });
   };
 
-  const log = getDailyLog(date);
+  // ✅ guard: kalau getDailyLog undefined / belum ada data
+  const rawLog = typeof getDailyLog === "function" ? getDailyLog(date) : null;
+  const log = {
+    calorie: rawLog?.calorie ?? 0,
+    protein: rawLog?.protein ?? 0,
+    carbs: rawLog?.carbs ?? 0,
+    fat: rawLog?.fat ?? 0,
+  };
 
   const donutData = {
     labels: ["Protein", "Karbohidrat", "Lemak"],
@@ -79,7 +79,6 @@ export default function DailySummaryCard({ getDailyLog }) {
 
       {/* GRID */}
       <div className="flex gap-4">
-
         {/* KANAN: Makro */}
         <div className="grid grid-cols-2 gap-4 flex-1 border-r pr-4">
           <div className="text-center">
@@ -112,7 +111,6 @@ export default function DailySummaryCard({ getDailyLog }) {
             <Doughnut data={donutData} />
           </div>
         </div>
-
       </div>
     </div>
   );

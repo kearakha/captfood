@@ -1,43 +1,25 @@
-'use client'
+"use client";
 
-import {
-  Chart as ChartJS,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip,
-  Legend,
-} from 'chart.js';
+import "@/lib/chartConfig";   // <- tambahkan ini
 
-import { Line } from 'react-chartjs-2';
-
-// Register Chart.js components
-ChartJS.register(
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip,
-  Legend
-);
+import { Line } from "react-chartjs-2";
 
 export default function WeightTrendChart({ labels, values, target }) {
   const data = {
     labels,
     datasets: [
       {
-        label: 'Berat Badan',
+        label: "Berat Badan",
         data: values,
-        borderColor: '#007aff',
-        backgroundColor: 'rgba(0, 122, 255, 0.15)',
+        borderColor: "#007aff",
+        backgroundColor: "rgba(0, 122, 255, 0.15)",
         tension: 0.4,
         fill: true,
       },
       {
-        label: 'Target Berat',
+        label: "Target Berat",
         data: labels.map(() => target),
-        borderColor: '#ff3b30',
+        borderColor: "#ff3b30",
         borderDash: [5, 5],
         pointRadius: 0,
         tension: 0,
@@ -45,8 +27,9 @@ export default function WeightTrendChart({ labels, values, target }) {
     ],
   };
 
-  const minValue = Math.min(...values, target) - 1;
-  const maxValue = Math.max(...values, target) + 1;
+  const safeValues = Array.isArray(values) && values.length > 0 ? values : [target ?? 0];
+  const minValue = Math.min(...safeValues, target ?? 0) - 1;
+  const maxValue = Math.max(...safeValues, target ?? 0) + 1;
 
   const options = {
     responsive: true,
@@ -60,7 +43,7 @@ export default function WeightTrendChart({ labels, values, target }) {
     },
     plugins: {
       legend: {
-        position: 'top',
+        position: "top",
         labels: { boxWidth: 12 },
       },
     },

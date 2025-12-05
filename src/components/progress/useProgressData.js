@@ -2,12 +2,42 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  loadProfile as loadRawProfile,
+  saveProfile as saveRawProfile,
+} from "@/lib/profile";
 
 const ENTRY_KEY = "captfood:entries";
-const PROFILE_KEY = "captfood:profile";
 const WEIGHT_HISTORY_KEY = "captfood:weightHistory";
 
-// normalisasi tanggal → "YYYY-MM-DD"
+const DEFAULT_PROFILE = {
+  name: "User",
+  email: "user@example.com",
+  weight: 70,
+  height: 170,
+  targetWeight: 65,
+  dailyCalories: 2000,
+  targetProtein: 120,
+  targetCarbs: 250,
+  targetFat: 60,
+};
+
+function normalizeProfile(raw) {
+  const p = raw || {};
+  return {
+    name: p.name || "User",
+    email: p.email || "user@example.com",
+    weight: Number(p.weight || 70),
+    height: Number(p.height || 170),
+    targetWeight: Number(p.targetWeight || p.target_weight || 65),
+    dailyCalories: Number(p.dailyCalories || p.daily_calories || 2000),
+    targetProtein: Number(p.targetProtein || p.target_protein || 120),
+    targetCarbs: Number(p.targetCarbs || p.target_carbs || 250),
+    targetFat: Number(p.targetFat || p.target_fat || 60),
+  };
+}
+
+// ===== Helper tanggal → "YYYY-MM-DD" =====
 function normalizeDateKey(d) {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -21,7 +51,7 @@ function parseDateFromISO(iso) {
   return d;
 }
 
-// hitung BMI + status
+// ===== BMI =====
 function calcBMI(weightKg, heightCm) {
   if (!weightKg || !heightCm) return { bmi: 0, status: "-" };
   const hM = heightCm / 100;
@@ -35,66 +65,7 @@ function calcBMI(weightKg, heightCm) {
   return { bmi: Number(bmi.toFixed(1)), status };
 }
 
-// ambil profile dari localStorage (Nutrition Plan)
-function loadProfile() {
-  if (typeof window === "undefined") {
-    return {
-      name: "User",
-      email: "user@example.com",
-      weight: 70,
-      height: 170,
-      targetWeight: 65,
-      dailyCalories: 2000,
-      targetProtein: 120,
-      targetCarbs: 250,
-      targetFat: 60,
-    };
-  }
-
-  try {
-    const raw = localStorage.getItem(PROFILE_KEY);
-    if (!raw) {
-      // default kalau user belum isi Nutrition Plan
-      return {
-        name: "User",
-        email: "user@example.com",
-        weight: 70,
-        height: 170,
-        targetWeight: 65,
-        dailyCalories: 2000,
-        targetProtein: 120,
-        targetCarbs: 250,
-        targetFat: 60,
-      };
-    }
-    const p = JSON.parse(raw);
-    return {
-      name: p.name || "User",
-      email: p.email || "user@example.com",
-      weight: Number(p.weight || 70),
-      height: Number(p.height || 170),
-      targetWeight: Number(p.targetWeight || p.target_weight || 65),
-      dailyCalories: Number(p.dailyCalories || p.daily_calories || 2000),
-      targetProtein: Number(p.targetProtein || p.target_protein || 120),
-      targetCarbs: Number(p.targetCarbs || p.target_carbs || 250),
-      targetFat: Number(p.targetFat || p.target_fat || 60),
-    };
-  } catch {
-    return {
-      name: "User",
-      email: "user@example.com",
-      weight: 70,
-      height: 170,
-      targetWeight: 65,
-      dailyCalories: 2000,
-      targetProtein: 120,
-      targetCarbs: 250,
-      targetFat: 60,
-    };
-  }
-}
-
-// ambil semua entries makan dari localStorage
+// ===== Entries makan dari localStorage =====
 function loadEntries() {
   if (typeof window === "undefined") return [];
   try {
@@ -135,7 +106,7 @@ function aggregateByDate(entries) {
   return map;
 }
 
-// ambil / simpan riwayat berat
+// ===== Riwayat berat =====
 function loadWeightHistory(defaultWeight) {
   if (typeof window === "undefined") {
     return [
@@ -171,28 +142,46 @@ function saveWeightHistory(history) {
   } catch {}
 }
 
+// ========================================================
+//                     HOOK UTAMA
+// ========================================================
 export default function useProgressData() {
   // === STATE DASAR ===
-  const [profile, setProfile] = useState(() => loadProfile());
-  const [entries, setEntries] = useState(() => loadEntries());
+  // ⚠️ Tidak akses window di initial state → aman untuk SSR & hydration
+  const [profile, setProfile] = useState(DEFAULT_PROFILE);
+  const [entries, setEntries] = useState([]);
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [mode, setMode] = useState("weekly"); // "weekly" | "monthly"
-  const [weightHistory, setWeightHistory] = useState(() =>
-    loadWeightHistory(loadProfile().weight)
-  );
+  const [weightHistory, setWeightHistory] = useState(() => [
+    {
+      date: normalizeDateKey(new Date()),
+      weight: DEFAULT_PROFILE.weight,
+    },
+  ]);
 
-  // refresh kalau localStorage berubah (misal user tambah log dari Dashboard)
+  // Setelah mount, baru sync dengan localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const reload = () => {
-      setEntries(loadEntries());
-      setProfile(loadProfile());
-      setWeightHistory(loadWeightHistory(loadProfile().weight));
+    const initialLoad = () => {
+      const rawProfile = loadRawProfile();
+      const nextProfile = normalizeProfile(rawProfile) || DEFAULT_PROFILE;
+      const nextEntries = loadEntries();
+      const nextHistory = loadWeightHistory(nextProfile.weight);
+
+      setProfile(nextProfile);
+      setEntries(nextEntries);
+      setWeightHistory(nextHistory);
     };
 
-    window.addEventListener("storage", reload);
-    return () => window.removeEventListener("storage", reload);
+    initialLoad();
+
+    const handleStorage = () => {
+      initialLoad();
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   // === DAILY AGGREGATE ===
@@ -258,11 +247,7 @@ export default function useProgressData() {
 
   const persistProfile = (next) => {
     setProfile(next);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(PROFILE_KEY, JSON.stringify(next));
-      } catch {}
-    }
+    saveRawProfile(next); // pakai helper dari lib/profile
   };
 
   const updateWeight = (newWeight) => {
@@ -319,7 +304,6 @@ export default function useProgressData() {
   // === CALORIE TREND (Weekly / Monthly) ===
   const { weeklyCalories, monthlyCalories } = useMemo(() => {
     const today = new Date();
-    const dailyKeys = Object.keys(dailyAgg);
 
     // helper: ambil kalori suatu tanggal (default 0)
     const getKcal = (d) => {
